@@ -2,7 +2,7 @@ package logging
 
 import (
 	"bytes"
-	"fmt"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -17,13 +17,12 @@ func TestJson(t *testing.T) {
 	logger.Out = &logs
 	logger.DateTimeFormat = "2006/01/02"
 
-	tests.ExecFn(t, logger.Infof, "this is my %s", "message").
-		Fatal().
-		NoError()
-
-	tests.ExecFn(t, logs.String).
-		Fatal().
-		Equals(fmt.Sprintf("{\"datetime\":\"%s\",\"level\":\"info\",\"message\":\"this is my message\"}\n", time.Now().Format(logger.DateTimeFormat)))
+	tests.ExecuteE(logger.Infof("this is my %s", "message")).NoError(t)
+	tests.Execute(logs.String()).Diff(t, mustJson(t, map[string]interface{}{
+		"datetime": time.Now().Format(logger.DateTimeFormat),
+		"level":    "info",
+		"message":  "this is my message",
+	}))
 }
 
 func TestJson_WithError(t *testing.T) {
@@ -35,14 +34,13 @@ func TestJson_WithError(t *testing.T) {
 
 	logger := json.WithError(errors.New(nil, errors.ErrorCodeUnknown, "bad error"))
 
-	tests.ExecFn(t, logger.Errorf, "this is my %s", "message").
-		Fatal().
-		NoError()
-
-	tests.ExecFn(t, logs.String).
-		Fatal().
-		Equals(fmt.Sprintf("{\"datetime\":\"%s\",\"error\":\"bad error\",\"level\":\"error\",\"message\":\"this is my message\"}\n", time.Now().Format(json.DateTimeFormat)))
-
+	tests.ExecuteE(logger.Errorf("this is my %s", "message")).NoError(t)
+	tests.Execute(logs.String()).Diff(t, mustJson(t, map[string]interface{}{
+		"datetime": time.Now().Format(json.DateTimeFormat),
+		"error":    "bad error",
+		"level":    "error",
+		"message":  "this is my message",
+	}))
 }
 
 func TestJson_WithField(t *testing.T) {
@@ -54,11 +52,16 @@ func TestJson_WithField(t *testing.T) {
 
 	logger := json.WithField("key", "value")
 
-	tests.ExecFn(t, logger.Errorf, "this is my %s", "message").
-		Fatal().
-		NoError()
+	tests.ExecuteE(logger.Infof("this is my %s", "message")).NoError(t)
+	tests.Execute(logs.String()).Diff(t, mustJson(t, map[string]interface{}{
+		"datetime": time.Now().Format(json.DateTimeFormat),
+		"key":      "value",
+		"level":    "info",
+		"message":  "this is my message",
+	}))
+}
 
-	tests.ExecFn(t, logs.String).
-		Fatal().
-		Equals(fmt.Sprintf("{\"datetime\":\"%s\",\"key\":\"value\",\"level\":\"error\",\"message\":\"this is my message\"}\n", time.Now().Format(json.DateTimeFormat)))
+func mustJson(t *testing.T, data interface{}) string {
+	t.Helper()
+	return string(tests.Execute2E(json.Marshal(data)).NoError(t).Capture()) + "\n"
 }

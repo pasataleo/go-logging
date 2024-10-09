@@ -49,7 +49,6 @@ func JsonLogger() *Json {
 }
 
 func (j *Json) Copy() *Json {
-
 	fields := map[string]interface{}{}
 	for key, value := range j.AdditionalFields {
 		fields[key] = value
@@ -76,6 +75,18 @@ func (j *Json) Print(level Level, message string) error {
 	entry["level"] = level.String()
 	if j.err != nil {
 		entry["error"] = j.err.Error()
+
+		// Automatically include any embedded data in the error.
+		data := errors.GetAllEmbeddedData(j.err)
+		for key, value := range data {
+			entry[fmt.Sprintf("error.%s", key)] = value
+		}
+
+		// Automatically include the error code if it's not ErrorCodeUnknown.
+		errorCode := errors.GetErrorCode(j.err)
+		if errorCode != errors.ErrorCodeUnknown {
+			entry["error.code"] = errorCode
+		}
 	}
 	entry["message"] = message
 
