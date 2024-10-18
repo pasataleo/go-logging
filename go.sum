@@ -1,2 +1,6 @@
-github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
-github.com/google/go-cmp v0.5.9/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
+github.com/google/go-cmp v0.6.0 h1:ofyhxvXcZhMsU5ulbFiLKl/XBFqE1GSq7atu8tAmTRI=
+github.com/google/go-cmp v0.6.0/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
+github.com/pasataleo/go-errors v0.2.0 h1:bl5OdVzySTmtOylWfpWO28MZNvI531DWiR6GN9HCii0=
+github.com/pasataleo/go-errors v0.2.0/go.mod h1:hzgGSjSoyNCajQkCCIV5Zz6VNxQ1sxml9lHtWyjDvXo=
+github.com/pasataleo/go-testing v0.2.0 h1:srSUYLBW7gos6p+8Dc9XAft8joftMa2fS8EwXYCuxDg=
+github.com/pasataleo/go-testing v0.2.0/go.mod h1:b7VOJrZLKZs4ia9o25XaU0rg44XwRJ7h0OWpZiuXXHw=
