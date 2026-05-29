@@ -8,8 +8,33 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pasataleo/go-colour/pkg/colour"
 	"github.com/pasataleo/go-logging/pkg/logging"
 )
+
+// colouredLevel returns the level name wrapped in ANSI colour codes for
+// terminal output. Lives here rather than on logging.Level so the interface
+// package has no dependency on go-colour.
+func colouredLevel(l logging.Level) string {
+	switch l {
+	case logging.Trace:
+		return colour.Grey + "trace" + colour.Reset
+	case logging.Debug:
+		return colour.Cyan + "debug" + colour.Reset
+	case logging.Info:
+		return colour.Green + "info" + colour.Reset
+	case logging.Warn:
+		return colour.Yellow + "warn" + colour.Reset
+	case logging.Error:
+		return colour.Red + "error" + colour.Reset
+	case logging.Fatal:
+		return colour.BrightRed + "fatal" + colour.Reset
+	case logging.Panic:
+		return colour.BrightRed + "panic" + colour.Reset
+	default:
+		return "none"
+	}
+}
 
 // Logger is a Logger implementation that writes human-readable log lines to an
 // io.Writer.
@@ -44,7 +69,7 @@ func (l *Logger) log(level logging.Level, msg string) {
 	var b strings.Builder
 	b.WriteString(time.Now().In(l.location).Format(l.timeFormat))
 	b.WriteString(" ")
-	b.WriteString(level.ColouredString())
+	b.WriteString(colouredLevel(level))
 	if l.name != "" {
 		b.WriteString(" [")
 		b.WriteString(l.name)

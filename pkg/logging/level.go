@@ -1,10 +1,6 @@
 package logging
 
-import (
-	"fmt"
-
-	"github.com/pasataleo/go-colour/pkg/colour"
-)
+import "fmt"
 
 // Level represents a log severity level. Levels are ordered from least to most
 // severe: Trace, Debug, Info, Warn, Error, Fatal, Panic.
@@ -76,29 +72,6 @@ func (l Level) String() string {
 		return "fatal"
 	case Panic:
 		return "panic"
-	default:
-		return "none"
-	}
-}
-
-// ColouredString returns the level name wrapped in ANSI colour codes for
-// terminal output.
-func (l Level) ColouredString() string {
-	switch l {
-	case Trace:
-		return colour.Grey + "trace" + colour.Reset
-	case Debug:
-		return colour.Cyan + "debug" + colour.Reset
-	case Info:
-		return colour.Green + "info" + colour.Reset
-	case Warn:
-		return colour.Yellow + "warn" + colour.Reset
-	case Error:
-		return colour.Red + "error" + colour.Reset
-	case Fatal:
-		return colour.BrightRed + "fatal" + colour.Reset
-	case Panic:
-		return colour.BrightRed + "panic" + colour.Reset
 	default:
 		return "none"
 	}
