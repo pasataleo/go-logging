@@ -32,7 +32,7 @@ const (
 // Implements the reflectx.StringSettable interface so Level can be used as a
 // config/flag field.
 func (l *Level) SetString(v string) error {
-	switch v {
+	switch lowerASCII(v) {
 	case "none":
 		*l = None
 	case "trace":
@@ -53,6 +53,42 @@ func (l *Level) SetString(v string) error {
 		return fmt.Errorf("unknown log level: %q", v)
 	}
 	return nil
+}
+
+// MarshalText renders the level as its lowercase name, so a Level field
+// marshals as "info" rather than as the integer 3. Implements
+// encoding.TextMarshaler.
+func (l Level) MarshalText() ([]byte, error) {
+	return []byte(l.String()), nil
+}
+
+// UnmarshalText parses a level name, case-insensitively. Implements
+// encoding.TextUnmarshaler, which is what lets a Level round-trip through
+// encoding/json — see logging/json.Decode.
+func (l *Level) UnmarshalText(text []byte) error {
+	return l.SetString(string(text))
+}
+
+// lowerASCII lowercases an ASCII string, returning v unchanged when there is
+// nothing to do.
+//
+// This exists instead of strings.ToLower because this package is deliberately
+// kept light: consumers that need only the Logger interface or the Level type
+// include it in WASM builds, where every dependency costs binary size, and
+// strings.ToLower reaches the unicode case tables.
+func lowerASCII(v string) string {
+	for i := 0; i < len(v); i++ {
+		if c := v[i]; c >= 'A' && c <= 'Z' {
+			lowered := []byte(v)
+			for j := i; j < len(lowered); j++ {
+				if c := lowered[j]; c >= 'A' && c <= 'Z' {
+					lowered[j] = c + ('a' - 'A')
+				}
+			}
+			return string(lowered)
+		}
+	}
+	return v
 }
 
 // String returns the lowercase name of the level (e.g. "info", "warn").

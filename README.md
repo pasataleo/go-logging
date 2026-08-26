@@ -166,3 +166,80 @@ type App struct {
     Handler *MyHandler   // receives logging.Logger and *slog.Logger via injection
 }
 ```
+
+## Decoding
+
+The `logging/json` package reads its own output as well as writing it. A process that captures another process's stderr
+— see [go-plugin](https://github.com/pasataleo/go-plugin) — can turn those lines back into entries and replay them
+through its own logger, at the original level, with the original name and fields.
+
+The point of putting this next to the writer is not just convenience: it is that a single round-trip test in this
+package pins the two halves together, so a change to the entry format cannot silently break a consumer that had
+reimplemented the parse by hand.
+
+```go
+type Entry struct {
+    Time    time.Time
+    Level   logging.Level
+    Message string
+    Logger  string
+    Fields  map[string]any
+}
+
+func Decode(line []byte, options ...logging.Opt) (*Entry, error)
+func (e *Entry) Emit(logger logging.Logger)
+func Pipe(logger logging.Logger, r io.Reader, options ...logging.Opt) error
+```
+
+`Decode` parses one line. `Emit` replays an entry onto a logger — applying `Named` and `WithFields` first, then calling
+the method matching the entry's level. `Pipe` is the two composed over a stream, and is the only call most consumers
+need:
+
+```go
+// Replay everything the child process writes to stderr through our own logger.
+go json.Pipe(logger.Named("plugin"), stderr)
+```
+
+Lines that do not decode are emitted verbatim at `Warn`, which covers panics, runtime traces, and any producer that
+does not use this logger. Blank lines are skipped, and a final line with no trailing newline is still replayed.
+
+`Decode` treats a line as an entry only if it carries a `level` field, so arbitrary JSON a process happens to print is
+relayed verbatim rather than surfacing as an empty entry.
+
+### Why decoding needs the options
+
+`Decode` takes the same `logging.Opt` values as `New`, because two of them change the bytes on the wire:
+
+- **`WithTimeFormat`** — timestamps are written with `Opts.TimeFormat` (default `time.RFC3339`), so a decoder that
+  assumes RFC3339 cannot read a logger configured otherwise. Pass the producer's options to read its output. A
+  timestamp that will not parse leaves `Entry.Time` zero rather than failing the whole line.
+- **`WithTimezone`** — the location the timestamp was rendered in.
+
+`WithWriter` is ignored; `Pipe` reads from the `io.Reader` it is given.
+
+### Level
+
+Decoding requires `Level` to round-trip through JSON, so it gains `MarshalText` and `UnmarshalText`:
+
+```go
+func (l Level) MarshalText() ([]byte, error)
+func (l *Level) UnmarshalText(text []byte) error
+```
+
+These make `Level` work with `encoding/json` generally, not only here — a `Level` field in any struct now marshals as
+ `"info"` rather than `3`. `UnmarshalText` defers to `SetString`, so both are case-insensitive and both reject an
+unknown name.
+
+`SetString` previously compared against lowercase literals despite documenting itself as case-insensitive, so `"INFO"`
+was rejected; it now matches its documentation. The comparison is deliberately ASCII-only rather than using
+`strings.ToLower`, because `pkg/logging` is kept free of dependencies that cost binary size in WASM builds — the same
+reasoning that moved ANSI colour handling out into `logging/text`.
+
+### Replayed Fatal and Panic
+
+`Emit` never terminates the calling process. `Logger.Fatal` calls `os.Exit(1)` and `Logger.Panic` panics, which is
+correct for the process that hit the error and badly wrong for a process merely relaying someone else's log line — one
+plugin logging at `Fatal` would take the host down with it.
+
+Entries at `Fatal` or `Panic` are therefore replayed at `Error`, with the original level preserved as a `level` field
+so nothing is lost. `Entry.Level` still reports what the producer wrote.
