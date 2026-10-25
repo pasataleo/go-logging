@@ -14,6 +14,7 @@
 ## BUG FIXES
 
 - `Level.SetString` is case-insensitive, as documented.
+- `slog.Module` injects the bound `logging.Logger` instead of panicking.
 
 <!--
 ## SECURITY

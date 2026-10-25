@@ -4,7 +4,7 @@ go 1.25.7
 
 require (
 	github.com/pasataleo/go-colour v0.1.0
-	github.com/pasataleo/go-config v0.1.1-0.20261025094910-ab28f6050cc5
+	github.com/pasataleo/go-config v0.1.1-0.20261025173159-516c75741551
 	github.com/pasataleo/go-testingx v0.1.1-0.20261025064809-0f0ac56e57fc
 )
 
