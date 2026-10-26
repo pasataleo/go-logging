@@ -2,8 +2,7 @@
 
 ## FEATURES
 
-- `logging/json` reads its own output: `Decode` parses a line into an `Entry`, `Entry.Emit` replays it onto a logger, and `Pipe` does both over an `io.Reader`.
-- `Pipe` relays lines that are not entries verbatim at `Warn`.
+- `logging/json` reads its own output: `Decode` parses a line into an `Entry`, `Entry.Emit` replays it onto a logger, and `Pipe` does both over an `io.Reader`, relaying lines that are not entries verbatim at `Warn`.
 - `Level` implements `encoding.TextMarshaler` and `encoding.TextUnmarshaler`.
 
 ## IMPROVEMENTS
